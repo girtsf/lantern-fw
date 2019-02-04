@@ -1,12 +1,26 @@
+#include <FastLED.h>
 #include "Arduino.h"
 
-#define LED_BUILTIN 13
+#define PIN_BUILTIN_LED 13
+#define PIN_STRIP 12
 
-void setup() { pinMode(LED_BUILTIN, OUTPUT); }
+#define NUM_LEDS 2
+
+// LED strip.
+CRGB leds[NUM_LEDS];
+
+void setup() {
+  pinMode(PIN_BUILTIN_LED, OUTPUT);
+  FastLED.addLeds<WS2812, PIN_STRIP, GRB>(leds, NUM_LEDS);
+}
 
 void loop() {
-  digitalWrite(LED_BUILTIN, HIGH);
+  leds[0] = CRGB::Red;
+  leds[1] = CRGB::Green;
+  FastLED.show();
+  digitalWrite(PIN_BUILTIN_LED, HIGH);
   delay(1000);
-  digitalWrite(LED_BUILTIN, LOW);
+  FastLED.show();
+  digitalWrite(PIN_BUILTIN_LED, LOW);
   delay(1000);
 }

@@ -1,0 +1,7 @@
+= Lantern firmware
+
+== Building and Uploading
+
+----
+platformio run --target upload
+----
