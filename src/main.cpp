@@ -18,6 +18,8 @@ CRGB leds[NUM_LEDS];
 // Buttons.
 Bounce buttons[NUM_BUTTONS];
 
+// Gamma correction for brightness.
+//
 // From https://learn.adafruit.com/led-tricks-gamma-correction/the-quick-fix
 const uint8_t GAMMA[] = {
     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
@@ -39,7 +41,10 @@ const uint8_t GAMMA[] = {
     215, 218, 220, 223, 225, 228, 231, 233, 236, 239, 241, 244, 247, 249, 252,
     255};
 
-const uint8_t VALS[256] = {
+// Pink-ish noise, used for 'fire'.
+//
+// Generated with pink_noise.py.
+const uint8_t PINKISH_NOISE[256] = {
     0xbf, 0xb5, 0xb6, 0x7f, 0xa8, 0xc5, 0xac, 0x49, 0x52, 0x68, 0x80, 0x78,
     0x9e, 0x5a, 0x51, 0xa9, 0x5a, 0x79, 0x5e, 0x4d, 0x6c, 0x60, 0x4d, 0x7a,
     0x4b, 0xf,  0x3e, 0x4b, 0x32, 0x35, 0x20, 0x24, 0x38, 0x2a, 0x6,  0x1c,
@@ -82,8 +87,8 @@ void setup() {
 // Fire mode: redish/yellowish shimmers.
 void fire() {
   static uint8_t idx = 0;
-  static uint8_t from = VALS[0];
-  static uint8_t to = VALS[0];
+  static uint8_t from = PINKISH_NOISE[0];
+  static uint8_t to = from;
 
   static uint32_t next_time = 0;
 
@@ -92,7 +97,7 @@ void fire() {
     next_time = millis() + 128;
 
     from = to;
-    to = map8(VALS[idx++], 128, 250);
+    to = map8(PINKISH_NOISE[idx++], 128, 250);
   }
 
   uint8_t cur_step = cur_time % 128;
@@ -107,10 +112,10 @@ void fire() {
     uint8_t hue;
     uint8_t val2;
     if (IS_BOTTOM[i]) {
-      hue = random8(15, 20);
+      hue = random8(18, 25);
       val2 = val - 4 + random(0, 8);
     } else {
-      hue = random8(15, 30);
+      hue = random8(15, 35);
       val2 = val - random(32, 64);
     }
     leds[i].setHSV(hue, 255, GAMMA[val2]);
@@ -121,6 +126,53 @@ void count() {
   uint8_t lit = (millis() / 512) % NUM_LEDS;
   for (int i = 0; i < NUM_LEDS; ++i) {
     leds[i].setHSV(0, 255, i == lit ? 255 : 0);
+  }
+}
+
+// TODO: make speed adjustable.
+
+void beacon() {
+  const int period = 2048;
+  const int per_side = period / NUM_SIDES;
+
+  int lit_vector = millis() % period;
+  for (int i = 0; i < NUM_SIDES; ++i) {
+    int side_vector = i * per_side;
+
+    int distance = abs(side_vector - lit_vector);
+    if (distance > (period / 2)) {
+      distance = period - distance;
+    }
+    // Now distance is between 0 .. period/2. We want to map that to [255..0],
+    // then apply gamma.
+    uint8_t val = GAMMA[map(distance, 0, period / 2, 255, 0)];
+    leds[i * 2 + 0].setHSV(beat8(10), 255, val);
+    leds[i * 2 + 1].setHSV(beat8(10), 255, val);
+  }
+}
+
+bool police_on(int tick) {
+  return (tick >= 0 && tick <= 1) || (tick >= 3 && tick <= 4) ||
+         (tick >= 6 && tick <= 7);
+}
+
+void police() {
+  const int period = 1024;
+  const int ticks = 8 + 4 + 8 + 4;
+  long time = millis();
+  int tick = (time % period) / (period / ticks);
+  int rot = (time / period) % NUM_SIDES;
+  bool blue = police_on(tick);
+  bool red = (tick >= 12) && police_on(tick - 12);
+  for (int i = 0; i < (NUM_SIDES / 2); ++i) {
+    int led = ((i + rot) % NUM_SIDES) * 2;
+    leds[led + 0].setRGB(0, 0, blue ? 255 : 0);
+    leds[led + 1].setRGB(0, 0, blue ? 255 : 0);
+  }
+  for (int i = (NUM_SIDES / 2); i < NUM_SIDES; ++i) {
+    int led = ((i + rot) % NUM_SIDES) * 2;
+    leds[led + 0].setRGB(red ? 255 : 0, 0, 0);
+    leds[led + 1].setRGB(red ? 255 : 0, 0, 0);
   }
 }
 
@@ -136,8 +188,10 @@ void loop() {
   // } else if (buttons[2].fell()) {
   //   leds[0].setRGB(0, 0, 255);
   // }
-  fire();
+  // fire();
   // count();
+  // beacon();
+  police();
 
   FastLED.show();
   FastLED.delay(1);  // random8(5, 25));
