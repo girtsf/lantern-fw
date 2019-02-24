@@ -1,5 +1,14 @@
 = Lantern firmware
 
+Firmware for an LED "lantern" thing I built. This probably isn't too useful for
+anybody else.
+
+== Hardware
+
+- Adafruit Itsy Bitsy: https://www.adafruit.com/product/3677
+- 3x pushbuttons, wired A0, A1, A2 to gnd
+- 12x smart LEDs, WS2812 or some kind of clone
+
 == Building and Uploading
 
 ----
@@ -8,7 +17,7 @@ platformio run --target upload
 
 == Notes
 
-=== Current and capacity
+=== Current and battery capacity
 
 Current measurements only accurate to \~10mA.
 
