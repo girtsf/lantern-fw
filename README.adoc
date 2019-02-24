@@ -5,3 +5,23 @@
 ----
 platformio run --target upload
 ----
+
+== Notes
+
+=== Current and capacity
+
+Current measurements only accurate to \~10mA.
+
+With 2 LEDs:
+
+- both off: 10mA
+- 1 red: 20mA
+- 2 red: 40mA
+- 1 white: 50mA
+- 2 white: 100mA
+
+Handwavey: all white: 50mA per LED at full brightness white.
+
+We have 12 LEDs total (6 panels, 2 LEDs each). Small "lipstick" USB battery is
+2200mAh, perhaps at 3.7V. So maybe \~8.14Wh. At 5V, that's \~1600mAh, or 2.6h
+with all 12 LEDs at full brightness. This ignores any inefficiencies.
